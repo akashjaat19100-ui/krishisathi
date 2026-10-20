@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  kisansathi:
+    build: .
+    container_name: kisansathi_app
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+    restart: unless-stopped
+    volumes:
+      - ./krishisathi.db:/app/krishisathi.db

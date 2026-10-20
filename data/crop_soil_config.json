@@ -1,0 +1,131 @@
+{
+  "_comment": "FAO-56 Irrigation and Drainage Paper No. 56 parameters. Note: Verify against local FAO-56 tables and agricultural university agronomy field guides for specific cultivar adaptations.",
+  "crops": {
+    "tomato": {
+      "name": "Tomato",
+      "stage_days": {
+        "initial": 25,
+        "development": 35,
+        "mid": 45,
+        "late": 30
+      },
+      "kc": {
+        "initial": 0.60,
+        "mid": 1.15,
+        "end": 0.80
+      },
+      "root_depth_min_m": 0.25,
+      "root_depth_max_m": 0.70,
+      "p": 0.40,
+      "water_saving_tips": [
+        "Mulch with straw or crop residue around tomato stems to retain soil moisture and reduce weeding.",
+        "Irrigate in the early morning or evening to minimise evaporative losses.",
+        "Use furrow irrigation or drip layout rather than flood basin to prevent collar rot."
+      ]
+    },
+    "wheat": {
+      "name": "Wheat",
+      "stage_days": {
+        "initial": 20,
+        "development": 30,
+        "mid": 45,
+        "late": 25
+      },
+      "kc": {
+        "initial": 0.40,
+        "mid": 1.15,
+        "end": 0.40
+      },
+      "root_depth_min_m": 0.30,
+      "root_depth_max_m": 1.00,
+      "p": 0.55,
+      "water_saving_tips": [
+        "Prioritize irrigation at Crown Root Initiation (CRI, 21 days after sowing) - missing this cuts yield.",
+        "Delay irrigation if rain is forecast in the next 48 hours.",
+        "Irrigate during cool morning hours to avoid fungal rust development."
+      ]
+    },
+    "maize": {
+      "name": "Maize",
+      "stage_days": {
+        "initial": 20,
+        "development": 35,
+        "mid": 40,
+        "late": 30
+      },
+      "kc": {
+        "initial": 0.40,
+        "mid": 1.20,
+        "end": 0.60
+      },
+      "root_depth_min_m": 0.30,
+      "root_depth_max_m": 0.90,
+      "p": 0.50,
+      "water_saving_tips": [
+        "Use alternate furrow irrigation for row crops to cut water use by up to 30%.",
+        "Silking and grain-filling are critical moisture stages; avoid water stress during flowering.",
+        "Mulch inter-row spaces with dry crop biomass to shade soil."
+      ]
+    },
+    "cotton": {
+      "name": "Cotton",
+      "stage_days": {
+        "initial": 30,
+        "development": 50,
+        "mid": 60,
+        "late": 40
+      },
+      "kc": {
+        "initial": 0.45,
+        "mid": 1.15,
+        "end": 0.70
+      },
+      "root_depth_min_m": 0.35,
+      "root_depth_max_m": 1.20,
+      "p": 0.65,
+      "water_saving_tips": [
+        "Furrow irrigation in alternate rows saves 25% water without reducing boll weight.",
+        "Stop irrigation when 10% bolls are open to accelerate boll bursting and prevent fibre stain.",
+        "Irrigate early morning or evening to reduce daytime wind-drift evaporation."
+      ]
+    }
+  },
+  "soils": {
+    "sandy": {
+      "name": "Sandy Soil",
+      "taw_mm_per_m": 90.0,
+      "field_capacity_pct": 14.0,
+      "wilting_point_pct": 5.0,
+      "adc_dry": 3400,
+      "adc_wet": 1100,
+      "description": "Light textured, low water holding capacity, drains rapidly, needs frequent light irrigations."
+    },
+    "loam": {
+      "name": "Loam / Medium Black Soil",
+      "taw_mm_per_m": 150.0,
+      "field_capacity_pct": 28.0,
+      "wilting_point_pct": 13.0,
+      "adc_dry": 3200,
+      "adc_wet": 1300,
+      "description": "Balanced soil with moderate infiltration and good water retention, typical of Pune plateau."
+    },
+    "clay": {
+      "name": "Clay / Deep Black Soil (Vertisol)",
+      "taw_mm_per_m": 190.0,
+      "field_capacity_pct": 40.0,
+      "wilting_point_pct": 21.0,
+      "adc_dry": 3000,
+      "adc_wet": 1500,
+      "description": "Heavy soil with high moisture retention, swells when wet, cracks when dry, prone to waterlogging."
+    }
+  },
+  "radar_defaults": {
+    "cluster_radius_km": 10.0,
+    "cluster_window_days": 7,
+    "min_reports_trigger": 3
+  },
+  "irrigation_defaults": {
+    "baseline_fixed_schedule_days": 5,
+    "sensor_correction_threshold_mm": 5.0
+  }
+}

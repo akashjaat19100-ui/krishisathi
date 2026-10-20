@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KisanSathi | Tiered Irrigation & Disease Radar</title>
+  <!-- Mobile & PWA Optimization -->
+  <meta name="theme-color" content="#134e1c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KisanSathi">
+  <!-- Local Leaflet Assets for 100% Offline Support -->
+  <link rel="stylesheet" href="/static/assets/leaflet.css">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-top">
+        <div class="brand-wrapper">
+          <span class="brand-logo">🌱</span>
+          <div>
+            <h1 class="brand-title" id="header-app-title">KisanSathi</h1>
+            <p class="brand-sub" id="header-app-sub">Tiered Irrigation & Disease Radar</p>
+          </div>
+        </div>
+        <div class="header-badges">
+          <span class="badge-pill badge-offline" id="weather-badge">
+            <span class="badge-dot">●</span> <span id="weather-badge-text">Offline (Sample CSV)</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Controls: Farmer Switcher, Language & Demo Scenario Buttons -->
+      <div class="header-controls">
+        <div class="control-group">
+          <label class="control-label" for="farmer-select">👨‍🌾 Farmer:</label>
+          <select id="farmer-select" class="custom-select" onchange="onFarmerChange(this.value)">
+            <!-- Populated dynamically from /api/farmers -->
+          </select>
+        </div>
+
+        <div class="control-group" style="max-width: 130px;">
+          <label class="control-label" for="lang-select">🌐 Lang:</label>
+          <select id="lang-select" class="custom-select" onchange="onLanguageChange(this.value)">
+            <option value="mr" selected>मराठी (MR)</option>
+            <option value="hi">हिंदी (HI)</option>
+            <option value="en">English (EN)</option>
+          </select>
+        </div>
+
+        <div class="btn-demo-group">
+          <button class="btn-xs btn-outbreak" onclick="triggerOutbreakSimulation()" title="Add 3 tomato late-blight reports within 10 km to trigger live radar">
+            🚨 Simulate Outbreak
+          </button>
+          <button class="btn-xs btn-reset" onclick="resetDemoData()" title="Reset all data to initial seed state">
+            🔄 Reset
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tab Bar -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('advisory')">
+        <span class="tab-icon">🌾</span>
+        <span>Advisory</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('phone')">
+        <span class="tab-icon">📱</span>
+        <span>Phone</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('disease')">
+        <span class="tab-icon">🔍</span>
+        <span>Leaf Scan</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('radar')">
+        <span class="tab-icon">📡</span>
+        <span>Radar</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('mitra')">
+        <span class="tab-icon">🤝</span>
+        <span>Krishi Mitra</span>
+      </button>
+    </nav>
+
+    <!-- Main Content Panes -->
+    <main class="app-content">
+
+      <!-- ================================================================= -->
+      <!-- TAB 1: ADVISORY (FARMER DASHBOARD) -->
+      <!-- ================================================================= -->
+      <section id="tab-advisory" class="tab-pane active">
+        <!-- Outbreak Warning Banner (Hidden unless radar triggers) -->
+        <div id="outbreak-banner" class="alert-banner" style="display: none;">
+          <span class="siren-icon">🚨</span>
+          <div class="alert-text">
+            <h4 id="banner-title">Community Disease Alert!</h4>
+            <p id="banner-msg">Tomato Late Blight reported in nearby village. Inspect your field today!</p>
+          </div>
+        </div>
+
+        <!-- Daily Signal Hero Card -->
+        <div id="signal-hero" class="signal-card signal-RED">
+          <div class="signal-icon-large" id="signal-icon">🔴</div>
+          <h2 class="signal-headline" id="signal-title">RED SIGNAL: IRRIGATE TODAY</h2>
+          <p class="signal-subline" id="signal-desc">Refill root deficit with about 2.5 hours of pumping.</p>
+          <div class="signal-badge-strip">
+            <span class="badge-tag" id="sensor-source-badge">📡 Corrected by Sensor</span>
+            <span class="badge-tag" id="crop-stage-badge">Crop: Tomato (Mid-Season)</span>
+          </div>
+        </div>
+
+        <!-- Primary Action Button -->
+        <button class="btn-action-large btn-confirm-irrigation" onclick="confirmFarmerIrrigation()">
+          <span>💧</span>
+          <span>I Irrigated Today (मी आज पाणी दिले)</span>
+        </button>
+
+        <!-- Key Metrics Grid -->
+        <div class="metrics-grid">
+          <div class="metric-box">
+            <div class="metric-value" id="metric-dr">32.4 mm</div>
+            <div class="metric-label">Water Deficit (Dr)</div>
+            <div class="metric-extra" id="metric-raw">Trigger: 30.6 mm</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value" id="metric-hours">2.5 hrs</div>
+            <div class="metric-label">Pumping Time</div>
+            <div class="metric-extra" id="metric-volume">~37,500 L</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value" id="metric-next">Today</div>
+            <div class="metric-label">Next Action</div>
+            <div class="metric-extra" id="metric-date">2026-10-20</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value" id="metric-et0">4.5 mm/d</div>
+            <div class="metric-label">Daily ET0 (Hargreaves)</div>
+            <div class="metric-extra" id="metric-weather">Tmax: 32°C</div>
+          </div>
+        </div>
+
+        <!-- Soil Depletion Progress Bar -->
+        <div class="card">
+          <div class="card-title">
+            <span>🌱</span> <span>Soil Moisture Depletion Gauge (FAO-56 Water Balance)</span>
+          </div>
+          <div class="depletion-bar-container">
+            <div id="depletion-bar-fill" class="depletion-bar-fill" style="width: 85%; background: var(--signal-red);"></div>
+          </div>
+          <div class="depletion-labels">
+            <span>0% (Field Capacity / Moist)</span>
+            <span id="label-raw-threshold">RAW Trigger (40%)</span>
+            <span>100% (Wilting Point / Dry)</span>
+          </div>
+        </div>
+
+        <!-- Weekly Rupee Savings Card -->
+        <div class="card savings-card">
+          <div class="savings-header">
+            <div>
+              <div class="card-title" style="margin-bottom: 2px;">
+                <span>💰</span> <span>Weekly Rupee & Water Savings</span>
+              </div>
+              <p style="font-size: 11px; opacity: 0.85;">Compared to fixed 5-day calendar pumping</p>
+            </div>
+            <div class="savings-rupees" id="savings-rupees">₹270</div>
+          </div>
+          <div class="savings-details">
+            <div>⚡ Electricity Units Saved: <b id="savings-kwh">60 kWh</b></div>
+            <div>⏱️ Pump Hours Skipped: <b id="savings-hours">16 hrs</b></div>
+            <div>💧 Groundwater Saved: <b id="savings-liters">240,000 L</b></div>
+            <div>📅 Baseline Schedule: <b>Every 5 Days</b></div>
+          </div>
+        </div>
+
+        <!-- Agronomic Water-Saving Tip Card -->
+        <div class="card tip-card">
+          <div class="card-title" style="color: #795548;">
+            <span>💡</span> <span>Agronomic Tip for Your Crop</span>
+          </div>
+          <p id="water-saving-tip-text">
+            Mulch with dry straw or crop residue around tomato stems to retain soil moisture and reduce evaporative loss.
+          </p>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 2: PHONE SIMULATOR (MISSED-CALL / VOICE / SMS) -->
+      <!-- ================================================================= -->
+      <section id="tab-phone" class="tab-pane">
+        <div class="phone-mockup-wrapper">
+          <div class="phone-screen">
+            <div class="phone-top-status">
+              <span>KisanSathi Mobile</span>
+              <span id="phone-clock">16:30</span>
+              <span>📶 🔋 98%</span>
+            </div>
+
+            <div class="phone-screen-body">
+              <!-- STATE 1: IDLE DIALER -->
+              <div id="phone-state-idle" class="call-state-idle">
+                <div class="dialer-avatar">📞</div>
+                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">KisanSathi Advisory</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 18px;">
+                  Toll-Free Missed-Call Service: <b>1800-KISAN</b>
+                </p>
+                <button class="btn-missed-call" onclick="triggerMissedCall()">
+                  <span>📞</span> <span>Give Missed Call (मिस्ड कॉल द्या)</span>
+                </button>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 14px;">
+                  Simulates a farmer dialing from any basic feature phone. Drops after 1 ring; automated voice call arrives in 2 seconds.
+                </p>
+              </div>
+
+              <!-- STATE 2: CALLING & WAITING -->
+              <div id="phone-state-calling" class="call-state-calling" style="display: none;">
+                <div class="pulse-ring">
+                  <span style="font-size: 32px;">📲</span>
+                </div>
+                <h4 style="font-size: 16px; font-weight: 700;">Missed Call Placed!</h4>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Call dropped after 1 ring.</p>
+                <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin: 12px 0;" id="callback-countdown">2</div>
+                <p style="font-size: 12px; font-weight: 600;">Incoming automated callback...</p>
+              </div>
+
+              <!-- STATE 3: ACTIVE CALLBACK & VOICE -->
+              <div id="phone-state-active" class="call-state-active" style="display: none;">
+                <div class="active-call-header">
+                  <span style="font-size: 11px; color: var(--primary); font-weight: 700;">● CALL IN PROGRESS</span>
+                  <h4 style="font-size: 16px; font-weight: 700;" id="phone-caller-name">KisanSathi Voice Bot</h4>
+                  <p style="font-size: 11px; color: var(--text-muted);" id="phone-farmer-tag">Farmer: Ramesh Shinde</p>
+                  
+                  <div class="audio-speaker-wave" id="audio-wave">
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                  </div>
+
+                  <div style="display: flex; gap: 8px; justify-content: center; margin-top: 8px;">
+                    <button class="btn-xs btn-primary" style="background: var(--primary); color: white;" onclick="replayVoiceMessage()">
+                      🔊 Replay Voice
+                    </button>
+                    <button class="btn-xs btn-reset" style="background: #dc3545; color: white;" onclick="hangupPhone()">
+                      ❌ Hang Up
+                    </button>
+                  </div>
+                </div>
+
+                <!-- SMS Bubble View -->
+                <div class="sms-container">
+                  <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">
+                    📩 SMS ADVISORY (स्मार्टफोन नसतानाही संदेश):
+                  </div>
+                  <div class="sms-bubble">
+                    <p id="phone-sms-bubble-text">
+                      Red signal. Irrigate today. Refill deficit with about 2.5 hours of pumping.
+                    </p>
+                    <div class="sms-time" id="phone-sms-time">Now</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 3: LEAF DISEASE SCAN (TIER 2) -->
+      <!-- ================================================================= -->
+      <section id="tab-disease" class="tab-pane">
+        <div class="card">
+          <div class="card-title">
+            <span>🔬</span> <span>Leaf Photo Disease Check (पत्ती रोग तपासणी)</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+            Select a sample leaf photo or upload an image to identify crop diseases with AI. Low-confidence photos are safely routed to extension officers.
+          </p>
+
+          <!-- Quick Sample Leaf Buttons for Instant Viva Demo -->
+          <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--primary-dark);">
+            Demo Quick-Pick Leaves (एक क्लिक डेमो):
+          </div>
+          <div class="sample-leaf-picker">
+            <button class="leaf-preset-btn" onclick="testLeafSample('tomato_late_blight.jpg', 'tomato')">
+              🍅 Tomato Late Blight
+            </button>
+            <button class="leaf-preset-btn" onclick="testLeafSample('tomato_early_blight.jpg', 'tomato')">
+              🍅 Tomato Early Blight
+            </button>
+            <button class="leaf-preset-btn" onclick="testLeafSample('wheat_brown_rust.jpg', 'wheat')">
+              🌾 Wheat Brown Rust
+            </button>
+            <button class="leaf-preset-btn" onclick="testLeafSample('maize_leaf_blight.jpg', 'maize')">
+              🌽 Maize Leaf Blight
+            </button>
+            <button class="leaf-preset-btn" onclick="testLeafSample('cotton_bacterial.jpg', 'cotton')">
+              🌿 Cotton Blight
+            </button>
+            <button class="leaf-preset-btn" onclick="testLeafSample('healthy_leaf.jpg', 'tomato')">
+              🌱 Healthy Leaf
+            </button>
+            <button class="leaf-preset-btn" style="background: #fff3cd; border-color: #ffeeba; color: #856404;" onclick="testLeafSample('blurry_leaf_sample.jpg', 'tomato')">
+              ❓ Blurry / Unsure Photo (<70%)
+            </button>
+          </div>
+
+          <!-- File Upload Zone -->
+          <div class="leaf-upload-zone" onclick="document.getElementById('leaf-file-input').click()">
+            <span style="font-size: 32px;">📷</span>
+            <div style="font-size: 14px; font-weight: 700; margin-top: 6px;">Click or Tap to Upload Leaf Image</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Supports JPG, PNG (Simulates Android Camera Capture)</div>
+            <input type="file" id="leaf-file-input" accept="image/*" style="display: none;" onchange="onLeafFileSelected(this)">
+          </div>
+
+          <!-- Diagnostic Results Card -->
+          <div id="disease-result-container" class="disease-result-card" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 id="disease-name" style="font-size: 18px; font-weight: 800; color: #b7094c;">Tomato Late Blight</h3>
+              <span id="disease-conf-badge" class="badge-pill badge-online" style="font-size: 12px;">94% Match</span>
+            </div>
+
+            <!-- Confidence Bar -->
+            <div class="confidence-bar-bg">
+              <div id="disease-conf-bar" class="confidence-bar-fill" style="width: 94%;"></div>
+            </div>
+
+            <!-- Advice Box -->
+            <div style="margin-top: 12px;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                First-Step Action Advice (त्वरित कृषी सल्ला):
+              </div>
+              <p id="disease-advice-text" style="font-size: 14px; color: var(--text-main); font-weight: 500; margin-top: 4px;">
+                High moisture hazard. Avoid flood irrigation, stake plants for airflow, inspect leaves daily.
+              </p>
+            </div>
+
+            <!-- Unsure Warning Alert (if confidence < 70%) -->
+            <div id="disease-unsure-box" class="unsure-warning-box" style="display: none;">
+              ⚠️ <b>Unsure Diagnosis (< 70% Confidence):</b><br>
+              Photo has been queued to Extension Officer review. The app will <i>never</i> guess pesticides blindly.
+            </div>
+
+            <!-- Anonymous Radar Report Button -->
+            <div id="report-btn-wrapper" style="margin-top: 16px;">
+              <button class="btn-action-large btn-outbreak" style="font-size: 15px; padding: 14px;" onclick="confirmAndReportDisease()">
+                <span>📢</span>
+                <span>Confirm & Report Anonymously (राडारवर नोंद करा)</span>
+              </button>
+              <p style="font-size: 11px; color: var(--text-muted); text-align: center;">
+                🔒 Privacy Protected: Reports only (Crop, Disease, Village). No farmer names or phones are transmitted.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 4: VILLAGE DISEASE RADAR & EXTENSION OFFICER DASHBOARD -->
+      <!-- ================================================================= -->
+      <section id="tab-radar" class="tab-pane">
+        <!-- Interactive Leaflet Map -->
+        <div class="card" style="padding: 14px;">
+          <div class="card-title" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>🗺️</span> <span>Village Outbreak Map (Pune Region)</span>
+            </div>
+            <span class="badge-pill badge-online" style="background: rgba(40,167,69,0.15); color: var(--primary);">
+              Radius: 10 km Clusters
+            </span>
+          </div>
+          <div id="radar-map"></div>
+          <p style="font-size: 11px; color: var(--text-muted);">
+            🟢 Green Pins: Normal surveillance. 🔴 Red Circles: 10 km Outbreak Radius (>= 3 reports within 7 days).
+          </p>
+        </div>
+
+        <!-- Extension Officer Visit Priority Table -->
+        <div class="card">
+          <div class="card-title">
+            <span>📋</span> <span>Extension Officer Priority Dispatch List (कुठे आधी जायचे?)</span>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+            Villages automatically ranked by 7-day report counts so officers prioritize highest-risk clusters:
+          </p>
+          <div style="overflow-x: auto;">
+            <table class="ranked-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Village</th>
+                  <th>Reports</th>
+                  <th>Primary Crops</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="ranked-villages-tbody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Active Community Outbreak Alerts -->
+        <div class="card">
+          <div class="card-title">
+            <span>🚨</span> <span>Active Outbreak Alerts (सक्रिय अलर्ट)</span>
+          </div>
+          <div id="active-alerts-list">
+            <!-- Dynamic alerts -->
+          </div>
+        </div>
+
+        <!-- Extension Officer Review Queue for "Unsure" Photos -->
+        <div class="card">
+          <div class="card-title">
+            <span>🩺</span> <span>Extension Officer Review Queue (अस्पष्ट फोटोंची तपासणी)</span>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+            Low-confidence farmer uploads awaiting expert verification:
+          </p>
+          <div id="officer-queue-list">
+            <!-- Dynamic queue items -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- TAB 5: KRISHI MITRA (HELPER MODE) & SHARED SENSORS -->
+      <!-- ================================================================= -->
+      <section id="tab-mitra" class="tab-pane">
+        <!-- Telemetry Monitor for Shared Soil Sensor Nodes (Tier 1) -->
+        <div class="card" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); border-color: #90caf9;">
+          <div class="card-title" style="color: #0d47a1;">
+            <span>📡</span> <span>Shared Soil-Moisture Sensor Clusters (Tier 1 Node Telemetry)</span>
+          </div>
+          <p style="font-size: 12px; color: #1565c0; margin-bottom: 12px;">
+            Community sensors installed in representative pilot fields. If sensor deficit differs from model by > 5 mm, it automatically overrides Dr for all cluster farmers!
+          </p>
+          <div id="sensor-clusters-container">
+            <!-- Dynamic sensor cluster cards -->
+          </div>
+        </div>
+
+        <!-- Quick Farmer Registration Form -->
+        <div class="card">
+          <div class="card-title">
+            <span>📝</span> <span>Register New Farmer (नवीन शेतकरी नोंदणी)</span>
+          </div>
+          <form id="farmer-register-form" onsubmit="handleFarmerRegistration(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Farmer Name *</label>
+                <input type="text" id="reg-name" class="form-control" required placeholder="e.g. Ramesh Shinde">
+              </div>
+              <div class="form-group">
+                <label>Phone Number (Kept Private) *</label>
+                <input type="tel" id="reg-phone" class="form-control" required placeholder="e.g. 9822011111">
+              </div>
+              <div class="form-group">
+                <label>Village *</label>
+                <select id="reg-village" class="form-control" required>
+                  <option value="v_shivapur">Shivapur</option>
+                  <option value="v_khed">Khed-Shivapur</option>
+                  <option value="v_saswad">Saswad</option>
+                  <option value="v_shirur">Shirur</option>
+                  <option value="v_baramati">Baramati</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Advisory Language *</label>
+                <select id="reg-language" class="form-control" required>
+                  <option value="mr">मराठी (Marathi)</option>
+                  <option value="hi">हिंदी (Hindi)</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Crop *</label>
+                <select id="reg-crop" class="form-control" required>
+                  <option value="tomato">Tomato (टोमॅटो)</option>
+                  <option value="wheat">Wheat (गहू)</option>
+                  <option value="maize">Maize (मका)</option>
+                  <option value="cotton">Cotton (कापूस)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Sowing Date *</label>
+                <input type="date" id="reg-sowing-date" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Soil Type *</label>
+                <select id="reg-soil" class="form-control" required>
+                  <option value="loam">Loam / Medium Black (मध्यम काळी)</option>
+                  <option value="clay">Clay / Heavy Black (भारी काळी)</option>
+                  <option value="sandy">Sandy / Light (हलकी वाळूयुक्त)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Plot Area (m²)</label>
+                <input type="number" id="reg-area" class="form-control" value="4046" placeholder="4046 m² = 1 Acre">
+              </div>
+              <div class="form-group">
+                <label>Pump Discharge (m³/hour)</label>
+                <input type="number" id="reg-pump-discharge" class="form-control" value="15" placeholder="15 m³/hr">
+              </div>
+              <div class="form-group">
+                <label>Pump Power (kW)</label>
+                <input type="number" step="0.1" id="reg-pump-power" class="form-control" value="3.75" placeholder="3.75 kW = 5 HP">
+              </div>
+              <div class="form-group">
+                <label>Electricity Rate (₹ / kWh)</label>
+                <input type="number" step="0.1" id="reg-elec-rate" class="form-control" value="4.5" placeholder="4.5">
+              </div>
+            </div>
+            <button type="submit" class="btn-submit" style="width: 100%; margin-top: 16px;">
+              💾 Register Farmer & Initialize Advisory
+            </button>
+          </form>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/assets/leaflet.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

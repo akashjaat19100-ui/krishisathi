@@ -1,0 +1,24 @@
+{
+  "lang_code": "en",
+  "lang_name": "English",
+  "app_title": "KisanSathi",
+  "app_tagline": "Tiered Irrigation & Disease Radar for Marginal Farmers",
+  "greeting": "Namaste {name}. Here is your KisanSathi advisory for today.",
+  "signal_red": "Red signal. Irrigate today. Refill deficit with about {hours} hours of pumping ({liters} liters).",
+  "signal_yellow": "Yellow signal. Irrigate in 1 to 2 days. Estimated pumping time will be about {hours} hours.",
+  "signal_green": "Green signal. Soil moisture is sufficient. Wait and check again on {next_date}.",
+  "alert_inspect": "Alert: {disease} reported in nearby village {village}. Inspect your {crop} field today.",
+  "weekly_saving": "This week you saved {hours} hours of pumping, conserving {liters} liters of groundwater and saving ₹{rupees}.",
+  "sensor_badge": "Corrected by sensor ({cluster_id})",
+  "model_badge": "Calculated by Weather-Soil Model",
+  "officer_alert": "Active outbreak alert for {crop} ({disease}) covering {villages}.",
+  "disease_unsure": "Unsure - image sent to extension officer for expert verification. Do not apply chemicals yet.",
+  "disease_advice": {
+    "Tomato___Early_blight": "Tomato Early Blight detected ({conf}%). Remove lower infected leaves and avoid overhead sprinkler watering. Inspect field.",
+    "Tomato___Late_blight": "Tomato Late Blight detected ({conf}%). High moisture risk. Avoid flood irrigation, stake plants for airflow, inspect leaves daily.",
+    "Wheat___Brown_rust": "Wheat Brown Rust detected ({conf}%). Inspect leaf undersides for orange pustules. Avoid nitrogen over-application.",
+    "Maize___Northern_Leaf_Blight": "Maize Northern Leaf Blight detected ({conf}%). Inspect spindle leaves for oblong lesions. Ensure good field drainage.",
+    "Cotton___Bacterial_blight": "Cotton Bacterial Blight (Angular Leaf Spot) detected ({conf}%). Inspect lower canopy and remove fallen infected debris.",
+    "Healthy": "Plant leaf appears healthy and vigorous ({conf}%). Continue routine field monitoring."
+  }
+}

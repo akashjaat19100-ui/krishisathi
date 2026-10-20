@@ -1,0 +1,42 @@
+[
+  {
+    "id": "v_shivapur",
+    "name": "Shivapur",
+    "district": "Pune",
+    "latitude": 18.3167,
+    "longitude": 73.8833,
+    "description": "Farming hub along the Pune-Satara highway with rich loam and vegetable farming."
+  },
+  {
+    "id": "v_khed",
+    "name": "Khed-Shivapur",
+    "district": "Pune",
+    "latitude": 18.3500,
+    "longitude": 73.8580,
+    "description": "Neighboring village (~4.5 km away) growing tomatoes, maize and vegetables."
+  },
+  {
+    "id": "v_saswad",
+    "name": "Saswad",
+    "district": "Pune",
+    "latitude": 18.3440,
+    "longitude": 73.9450,
+    "description": "Famous for onion, tomato and fig horticulture (~7.2 km from Shivapur cluster)."
+  },
+  {
+    "id": "v_shirur",
+    "name": "Shirur",
+    "district": "Pune",
+    "latitude": 18.8270,
+    "longitude": 74.3780,
+    "description": "Semi-arid northern taluka (>65 km away) primarily growing sugarcane and cotton."
+  },
+  {
+    "id": "v_baramati",
+    "name": "Baramati",
+    "district": "Pune",
+    "latitude": 18.1517,
+    "longitude": 74.5772,
+    "description": "Eastern taluka (>70 km away) with canal network, wheat and cotton cultivation."
+  }
+]
